@@ -109,7 +109,11 @@ final class ReviewFindingsTest extends TestCase
         $r = Confirm::payment($throwsOnQuery, new CallbackInput(['x' => '1']), new Expected('R1', 100));
         $this->assertSame(ConfirmResult::GATEWAY_ERROR, $r->reason);
         $this->assertStringNotContainsString('secret', $r->detail);
-        $this->assertSame(ConfirmResult::INVALID_SIGNATURE, Confirm::payment($throwsOnQuery, new CallbackInput, new Expected('R1', 100))->reason);
+        $this->assertSame('broken: getPayment threw TypeError', $r->detail);
+        // A verifyCallback that throws is a bug or a broken key, not a forgery (same as the TypeScript twin).
+        $thrown = Confirm::payment($throwsOnQuery, new CallbackInput, new Expected('R1', 100));
+        $this->assertSame(ConfirmResult::GATEWAY_ERROR, $thrown->reason);
+        $this->assertSame('broken: verifyCallback threw RuntimeException', $thrown->detail);
     }
 
     public function test_a_url_with_control_characters_never_reaches_a_location_header(): void

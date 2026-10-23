@@ -45,6 +45,26 @@ final class MoneyTest extends TestCase
         $this->assertSame($text, Money::toRinggit($sen));
     }
 
+    /** @return array<string, array{0: int|float, 1: string}> */
+    public static function numberTextVectors(): array
+    {
+        $rows = [];
+        /** @var list<array{0: int|float, 1: string}> $all */
+        $all = json_decode((string) file_get_contents(__DIR__.'/../../../packages/core/test/number-text-vectors.json'), true, flags: JSON_THROW_ON_ERROR);
+        foreach ($all as $i => [$n, $text]) {
+            $rows["#{$i} {$text}"] = [$n, $text];
+        }
+
+        return $rows;
+    }
+
+    /** Text::of writes numbers exactly like JavaScript's String() (the file is checked against JavaScript itself). */
+    #[DataProvider('numberTextVectors')]
+    public function test_text_of_writes_numbers_like_javascript(int|float $n, string $text): void
+    {
+        $this->assertSame($text, \Bayarkit\Text::of($n));
+    }
+
     public function test_refuses_values_json_cannot_carry(): void
     {
         foreach ([null, [], true, NAN, INF] as $bad) {

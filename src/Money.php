@@ -25,12 +25,13 @@ final class Money
      */
     public static function toSen(mixed $ringgit): ?int
     {
+        // A number is read as the decimal text JavaScript writes for it (Text::of), never through `* 100` + round():
+        // round() changed between PHP 8.3 and 8.4 (1.005 → 101 vs 100), and the TypeScript twin must agree.
         if (is_int($ringgit) || is_float($ringgit)) {
-            $sen = round((float) $ringgit * 100);
-
-            return is_finite($sen) && abs($sen) <= self::MAX_SEN ? (int) $sen : null;
+            return is_float($ringgit) && ! is_finite($ringgit) ? null : self::toSen(Text::of($ringgit));
         }
-        if (! is_string($ringgit) || ! preg_match('/^\s*(-?)(\d+)(?:\.(\d*))?\s*$/', $ringgit, $m)) {
+        // ASCII whitespace only, written out: the same set as the TypeScript twin, whatever PCRE's \s means.
+        if (! is_string($ringgit) || ! preg_match('/^[ \t\n\r\f\v]*(-?)(\d+)(?:\.(\d*))?[ \t\n\r\f\v]*$/', $ringgit, $m)) {
             return null;
         }
         $whole = ltrim($m[2], '0');

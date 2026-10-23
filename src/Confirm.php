@@ -19,8 +19,10 @@ final class Confirm
     {
         try {
             $cb = $gateway->verifyCallback($callback);
-        } catch (\Throwable) {
-            $cb = null; // the contract says it never throws; if an adapter does, it is still not a valid signature
+        } catch (\Throwable $e) {
+            // The contract says it never throws; when an adapter does, that is a bug or a misconfiguration (a broken
+            // key), not a forgery — reported as such, by class name only (as in the TypeScript twin).
+            return ConfirmResult::refused(ConfirmResult::GATEWAY_ERROR, $gateway->info()->name.': verifyCallback threw '.$e::class);
         }
         if ($cb === null) {
             return ConfirmResult::refused(ConfirmResult::INVALID_SIGNATURE, $gateway->info()->name.': callback signature did not verify');
@@ -35,7 +37,7 @@ final class Confirm
         } catch (\Throwable $e) {
             // Anything else (a transport the adapter did not expect, a bug) is still "could not confirm", never a 500
             // that hides the reason. The class name only: messages of unknown errors may carry request details.
-            return ConfirmResult::refused(ConfirmResult::GATEWAY_ERROR, $gateway->info()->name.': '.$e::class);
+            return ConfirmResult::refused(ConfirmResult::GATEWAY_ERROR, $gateway->info()->name.': getPayment threw '.$e::class);
         }
         if ($payment->status !== PaymentStatus::Paid) {
             return ConfirmResult::refused(ConfirmResult::NOT_PAID, 'gateway reports '.$payment->status->value, $payment);
