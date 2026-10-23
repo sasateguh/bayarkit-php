@@ -44,6 +44,10 @@ final class Checkout
     /** @throws GatewayError when the URL is not http(s) */
     public static function httpUrl(string $url, string $what = 'payment url'): string
     {
+        // No whitespace or control characters anywhere: they would be a header injection in Location.
+        if (preg_match('/[\x00-\x20\x7f]/', $url)) {
+            throw new GatewayError("{$what} contains whitespace or control characters", 'bayarkit', 0, 'INVALID_URL');
+        }
         $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
         $host = parse_url($url, PHP_URL_HOST);
         if (! in_array($scheme, ['http', 'https'], true) || ! is_string($host) || $host === '') {

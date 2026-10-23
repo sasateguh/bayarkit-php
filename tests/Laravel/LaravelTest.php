@@ -16,6 +16,7 @@ use Bayarkit\Laravel\Callback;
 use Bayarkit\Laravel\Checkout;
 use Bayarkit\Laravel\GatewayManager;
 use Bayarkit\PaymentForm;
+use Bayarkit\PaymentStatus;
 use Bayarkit\Tests\Support\Fakes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -72,6 +73,27 @@ final class LaravelTest extends TestCase
         $this->assertSame('https://dev.toyyibpay.com/abc123', $created->url);
         Http::assertSent(fn ($r) => $r->url() === 'https://dev.toyyibpay.com/index.php/api/createBill'
             && $r['billAmount'] === '1050' && $r['userSecretKey'] === 'cfg-secret');
+    }
+
+    public function test_a_timeout_that_is_not_whole_seconds_still_works_on_laravel_11(): void
+    {
+        // Laravel 11 declares timeout(int): 2500 ms once became a float and a TypeError on every call.
+        config(['bayarkit.timeout_ms' => 2500]);
+        $this->app->forgetInstance(GatewayManager::class);
+        Http::fake(['dev.toyyibpay.com/*' => Http::response("\t\t\t\tNo data found!", 200)]);
+        $this->assertSame(PaymentStatus::Pending, $this->app->make(Gateway::class)->getPayment('abc123')->status);
+    }
+
+    public function test_a_tls_or_transfer_failure_is_unreachable_not_an_escaping_guzzle_exception(): void
+    {
+        Http::fake(fn () => throw new \GuzzleHttp\Exception\RequestException('SSL certificate problem', new \GuzzleHttp\Psr7\Request('POST', 'https://dev.toyyibpay.com/x')));
+        try {
+            $this->app->make(Gateway::class)->getPayment('abc123');
+            $this->fail('expected a GatewayError');
+        } catch (GatewayError $e) {
+            $this->assertSame(0, $e->status);
+            $this->assertStringContainsString('unreachable', $e->getMessage());
+        }
     }
 
     public function test_reads_a_multipart_callback_the_way_toyyibpay_sends_it(): void

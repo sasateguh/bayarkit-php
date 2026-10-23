@@ -16,6 +16,7 @@ use Bayarkit\Http\TransportError;
 use Bayarkit\Money;
 use Bayarkit\PaymentRecord;
 use Bayarkit\PaymentStatus;
+use Bayarkit\Text;
 use Bayarkit\VerifiedCallback;
 use DateTimeImmutable;
 use OpenSSLAsymmetricKey;
@@ -174,7 +175,7 @@ final class Chip implements Gateway
             is_string($p['reference'] ?? null) ? $p['reference'] : '',
             self::mapStatus($p['status'] ?? null),
             $amount,
-            (string) ($payment['currency'] ?? $details['currency'] ?? ''),
+            Text::of($payment['currency'] ?? $details['currency'] ?? null),
             $paidOn !== null ? (new DateTimeImmutable)->setTimestamp($paidOn) : null,
             $payment !== null ? $int($payment['fee_amount'] ?? null) : null,
             $p,
@@ -200,14 +201,7 @@ final class Chip implements Gateway
         if (! is_array($p) || array_is_list($p) || ! is_string($p['id'] ?? null) || $p['id'] === '') {
             return null;
         }
-        $fields = [];
-        foreach ($p as $k => $v) {
-            if (is_string($v) || is_int($v) || is_float($v)) {
-                $fields[(string) $k] = (string) $v;
-            } elseif (is_bool($v)) {
-                $fields[(string) $k] = $v ? 'true' : 'false';
-            }
-        }
+        $fields = CallbackInput::strings($p);
 
         return new VerifiedCallback($p['id'], is_string($p['reference'] ?? null) ? $p['reference'] : '', self::mapStatus($p['status'] ?? null), $fields);
     }

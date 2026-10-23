@@ -10,15 +10,27 @@ namespace Bayarkit;
  */
 final readonly class CallbackInput
 {
+    /** @var array<string, string> Text fields from the body, or from the query string for return URLs. */
+    public array $fields;
+
+    /** @var array<string, string> Header names in lower case. */
+    public array $headers;
+
     /**
-     * @param  array<string, string>  $fields  Text fields from the body, or from the query string for return URLs.
-     * @param  array<string, string>  $headers  Header names in lower case.
+     * Non-text values (arrays from `$request->all()`, objects) are dropped here, so no adapter ever sees one: a
+     * `verifyCallback` that must never throw cannot be handed something it cannot read.
+     *
+     * @param  array<mixed>  $fields
+     * @param  array<mixed>  $headers
      */
     public function __construct(
-        public array $fields = [],
+        array $fields = [],
         public string $rawBody = '',
-        public array $headers = [],
-    ) {}
+        array $headers = [],
+    ) {
+        $this->fields = self::strings($fields);
+        $this->headers = array_change_key_case(self::strings($headers), CASE_LOWER);
+    }
 
     /**
      * Build from a decoded array (e.g. the JSON that `bayarkit-fake` serves); non-string values are dropped.
@@ -28,9 +40,9 @@ final readonly class CallbackInput
     public static function fromArray(array $data): self
     {
         return new self(
-            self::strings($data['fields'] ?? []),
+            is_array($data['fields'] ?? null) ? $data['fields'] : [],
             is_string($data['rawBody'] ?? null) ? $data['rawBody'] : '',
-            array_change_key_case(self::strings($data['headers'] ?? []), CASE_LOWER),
+            is_array($data['headers'] ?? null) ? $data['headers'] : [],
         );
     }
 
@@ -77,18 +89,20 @@ final readonly class CallbackInput
         return $fields;
     }
 
-    /** @return array<string, string> */
-    private static function strings(mixed $values): array
+    /**
+     * Scalars as JavaScript's String() writes them (true → "true"), so the twins read the same text; the rest dropped.
+     *
+     * @return array<string, string>
+     */
+    public static function strings(mixed $values): array
     {
         $out = [];
         if (! is_array($values)) {
             return $out;
         }
         foreach ($values as $k => $v) {
-            if (is_string($v) || is_int($v) || is_float($v)) {
-                $out[(string) $k] = (string) $v;
-            } elseif (is_bool($v)) {
-                $out[(string) $k] = $v ? 'true' : 'false';
+            if (is_scalar($v)) {
+                $out[(string) $k] = Text::of($v);
             }
         }
 

@@ -16,6 +16,7 @@ use Bayarkit\Http\TransportError;
 use Bayarkit\Money;
 use Bayarkit\PaymentRecord;
 use Bayarkit\PaymentStatus;
+use Bayarkit\Text;
 use Bayarkit\VerifiedCallback;
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -123,7 +124,7 @@ final class ToyyibPay implements Gateway
         }
         /** @var list<array<string, mixed>> $txs */
         $txs = array_values(array_filter($r['json'], 'is_array'));
-        $status = static fn (array $t): ?PaymentStatus => self::STATUS[(string) ($t['billpaymentStatus'] ?? '')] ?? null;
+        $status = static fn (array $t): ?PaymentStatus => self::STATUS[Text::of($t['billpaymentStatus'] ?? null)] ?? null;
         $pick = null;
         foreach ([PaymentStatus::Paid, PaymentStatus::Pending] as $want) {
             foreach ($txs as $t) {
@@ -136,16 +137,16 @@ final class ToyyibPay implements Gateway
         if ($pick === null) {
             return new PaymentRecord($id, '', PaymentStatus::Pending, 0, 'MYR', raw: $txs);
         }
-        $charge = $pick['transactionCharge'] ?? null;
+        $charge = Text::of($pick['transactionCharge'] ?? null);
 
         return new PaymentRecord(
             $id,
-            (string) ($pick['billExternalReferenceNo'] ?? ''),
+            Text::of($pick['billExternalReferenceNo'] ?? null),
             $status($pick) ?? PaymentStatus::Unknown,
             Money::toSen($pick['billpaymentAmount'] ?? null),
             'MYR',
-            self::parseMalaysiaTime((string) ($pick['billPaymentDate'] ?? '')),
-            $charge === null || trim((string) $charge) === '' ? null : Money::toSen($charge),
+            self::parseMalaysiaTime(Text::of($pick['billPaymentDate'] ?? null)),
+            trim($charge) === '' ? null : Money::toSen($charge),
             $txs,
         );
     }
@@ -182,7 +183,7 @@ final class ToyyibPay implements Gateway
             return true;
         }
         // Measured: {status:"error", result:"Invalid Secret Key!"} for a wrong key AND for a bill that does not exist.
-        throw new GatewayError(mb_substr((string) ($j['result'] ?? $r['text']), 0, 200), 'toyyibpay', $r['status'], is_string($j['status'] ?? null) ? $j['status'] : null);
+        throw new GatewayError(mb_substr(Text::of($j['result'] ?? $r['text']), 0, 200), 'toyyibpay', $r['status'], is_string($j['status'] ?? null) ? $j['status'] : null);
     }
 
     /**
@@ -253,7 +254,7 @@ final class ToyyibPay implements Gateway
     {
         $j = $r['json'];
         if (is_array($j) && ! array_is_list($j) && ($j['status'] ?? null) === 'error' && isset($j['msg'])) {
-            $msg = mb_substr((string) $j['msg'], 0, 200);
+            $msg = mb_substr(Text::of($j['msg']), 0, 200);
             throw new GatewayError('refused: '.$msg, 'toyyibpay', $r['status'], $msg);
         }
         $code = preg_match('/^\[([A-Z-]+)\]$/', $r['text'], $m) ? $m[1] : null;

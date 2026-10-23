@@ -73,7 +73,9 @@ public function callback(Request $request, Gateway $gateway)
 
 Exclude the callback route from CSRF: the gateway cannot send your token, and the signature check plus
 `Confirm::payment` (which asks the gateway again) are what protect it. Gateway calls go through Laravel's HTTP client,
-so `Http::fake()` covers them in your tests. The checkout button text (shown when scripts are blocked) is translated
+so `Http::fake()` covers them in your tests. The same goes for anything that records outgoing requests (Laravel
+Telescope's HTTP client watcher, logging middleware): toyyibPay takes its secret in the request BODY
+(`userSecretKey`, `secretKey`), so mask those parameters there as you would a password. The checkout button text (shown when scripts are blocked) is translated
 in BM and EN; publish `--tag=bayarkit-lang` to change it.
 
 ## Plain PHP

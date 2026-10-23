@@ -74,7 +74,9 @@ public function callback(Request $request, Gateway $gateway)
 
 Kecualikan laluan callback daripada CSRF: gateway tidak boleh menghantar token anda, dan yang melindunginya ialah
 semakan tandatangan serta `Confirm::payment` (yang bertanya gateway sekali lagi). Panggilan gateway melalui klien HTTP
-Laravel, jadi `Http::fake()` meliputinya dalam ujian anda. Teks butang checkout (dipapar bila skrip disekat)
+Laravel, jadi `Http::fake()` meliputinya dalam ujian anda. Begitu juga apa-apa yang merekod permintaan keluar (pemerhati klien
+HTTP Laravel Telescope, middleware log): toyyibPay menerima rahsianya dalam BADAN permintaan (`userSecretKey`,
+`secretKey`), jadi sorokkan parameter itu di situ seperti kata laluan. Teks butang checkout (dipapar bila skrip disekat)
 diterjemah dalam BM dan EN; terbitkan `--tag=bayarkit-lang` untuk mengubahnya.
 
 ## PHP biasa
