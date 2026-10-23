@@ -51,10 +51,10 @@ final class GatewayManager
                 return new ToyyibPay($s('secret_key'), $s('category_code'), $s('environment') ?: 'sandbox', $s('channel') ?: 'fpx',
                     (bool) ($c['charge_fee_to_customer'] ?? false), $baseUrl, $this->transport, $timeout);
             case 'chip':
-                $require('secret_key', 'brand_id');
+                $require('secret_key', 'brand_id', 'environment');
                 $methods = array_values(array_filter(array_map('trim', explode(',', $s('payment_methods')))));
 
-                return new Chip($s('secret_key'), $s('brand_id'), $s('public_key') ?: null, $s('environment') ?: null,
+                return new Chip($s('secret_key'), $s('brand_id'), $s('public_key') ?: null, $s('environment'),
                     $methods, $baseUrl, $this->transport, $timeout);
             default:
                 throw new GatewayError("gateway \"{$name}\" has no PHP adapter yet", 'bayarkit', 0, 'CONFIG');

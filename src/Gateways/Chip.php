@@ -51,7 +51,8 @@ final class Chip implements Gateway
     /**
      * @param  string|null  $publicKey  PEM that signs callbacks; get it once with fetchPublicKey() (same secret key) and
      *                                  store it in config. Without it every callback is refused. Literal `\n` is accepted.
-     * @param  string|null  $environment  test | live | null — guard only: a purchase whose `is_test` disagrees is refused (MODE_MISMATCH)
+     * @param  string|null  $environment  REQUIRED: test | live. One host, the key decides the mode; this is the guard that a
+     *                                    test purchase never marks a live order paid (MODE_MISMATCH / MODE_UNKNOWN).
      * @param  list<string>  $paymentMethods  `payment_method_whitelist`; empty = all enabled methods
      */
     public function __construct(
@@ -64,8 +65,8 @@ final class Chip implements Gateway
         private readonly Transport $transport = new CurlTransport,
         private readonly int $timeoutMs = 15_000,
     ) {
-        if ($environment !== null && ! in_array($environment, ['test', 'live'], true)) {
-            throw new GatewayError('environment must be test, live or empty', 'chip', 0, 'CONFIG');
+        if (! in_array($environment, ['test', 'live'], true)) {
+            throw new GatewayError("environment must be 'test' or 'live' (the guard against test payments)", 'chip', 0, 'CONFIG');
         }
         $this->base = rtrim($baseUrl ?? self::BASE_URL, '/');
         $this->key = $publicKey !== null && $publicKey !== '' ? self::rsaKey($publicKey) : null;
@@ -243,8 +244,8 @@ final class Chip implements Gateway
     /** @param array<mixed> $p */
     private function checkMode(array $p): void
     {
-        if ($this->environment === null || ! is_bool($p['is_test'] ?? null)) {
-            return;
+        if (! is_bool($p['is_test'] ?? null)) {
+            throw new GatewayError('purchase does not say whether it is a test (is_test)', 'chip', 0, 'MODE_UNKNOWN');
         }
         if ($p['is_test'] !== ($this->environment === 'test')) {
             throw new GatewayError('purchase is_test='.($p['is_test'] ? 'true' : 'false')." but environment is \"{$this->environment}\"", 'chip', 0, 'MODE_MISMATCH');

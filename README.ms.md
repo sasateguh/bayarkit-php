@@ -23,7 +23,8 @@ TOYYIBPAY_CATEGORY_CODE=...
 TOYYIBPAY_ENV=sandbox
 ```
 
-Untuk CHIP: `BAYARKIT_GATEWAY=chip`, `CHIP_SECRET_KEY`, `CHIP_BRAND_ID`, kemudian jalankan
+Untuk CHIP: `BAYARKIT_GATEWAY=chip`, `CHIP_SECRET_KEY`, `CHIP_BRAND_ID`, `CHIP_ENV` (`test` atau `live`, sepadan
+dengan kunci: wajib, ia menghalang bayaran ujian daripada menanda pesanan sebenar sebagai dibayar), kemudian jalankan
 `php artisan bayarkit:chip-public-key` sekali dan tampal baris yang dicetak (`CHIP_PUBLIC_KEY="…"`) ke `.env`. Tanpanya
 setiap callback CHIP ditolak.
 

@@ -24,16 +24,16 @@ final class ChipConformanceTest extends GatewayConformance
     {
         $f = Fakes::get('chip');
         // The key is fetched the way an app would: once, with the same secret key, through the adapter itself.
-        self::$pem ??= (new Chip($f['options']['secretKey'], $f['options']['brandId'], baseUrl: $f['url']))->fetchPublicKey();
+        self::$pem ??= (new Chip($f['options']['secretKey'], $f['options']['brandId'], environment: 'test', baseUrl: $f['url']))->fetchPublicKey();
 
-        return new Chip($f['options']['secretKey'], $f['options']['brandId'], self::$pem, baseUrl: $f['url']);
+        return new Chip($f['options']['secretKey'], $f['options']['brandId'], self::$pem, 'test', baseUrl: $f['url']);
     }
 
     public function test_accepts_a_public_key_stored_with_literal_backslash_n(): void
     {
         $f = Fakes::get('chip');
         $this->gateway();
-        $g = new Chip($f['options']['secretKey'], $f['options']['brandId'], str_replace("\n", '\n', (string) self::$pem), baseUrl: $f['url']);
+        $g = new Chip($f['options']['secretKey'], $f['options']['brandId'], str_replace("\n", '\n', (string) self::$pem), 'test', baseUrl: $f['url']);
         $created = $g->createPayment($this->input());
         $this->assertNotNull($g->verifyCallback(Fakes::callbackFor('chip', $created->id)));
     }
@@ -41,7 +41,7 @@ final class ChipConformanceTest extends GatewayConformance
     public function test_without_a_public_key_every_callback_is_refused(): void
     {
         $f = Fakes::get('chip');
-        $g = new Chip($f['options']['secretKey'], $f['options']['brandId'], baseUrl: $f['url']);
+        $g = new Chip($f['options']['secretKey'], $f['options']['brandId'], environment: 'test', baseUrl: $f['url']);
         $created = $g->createPayment($this->input());
         $this->assertNull($g->verifyCallback(Fakes::callbackFor('chip', $created->id)));
     }
@@ -80,6 +80,32 @@ final class ChipConformanceTest extends GatewayConformance
             $this->fail('a test purchase was accepted by a live config');
         } catch (GatewayError $e) {
             $this->assertSame('MODE_MISMATCH', $e->gatewayCode);
+        }
+    }
+
+    public function test_the_test_live_guard_is_required_and_a_record_must_say_its_mode(): void
+    {
+        $f = Fakes::get('chip');
+        foreach ([null, '', 'prod'] as $env) {
+            try {
+                new Chip($f['options']['secretKey'], $f['options']['brandId'], environment: $env, baseUrl: $f['url']);
+                $this->fail('accepted environment '.var_export($env, true));
+            } catch (GatewayError $e) {
+                $this->assertSame('CONFIG', $e->gatewayCode);
+            }
+        }
+        $transport = new class implements \Bayarkit\Http\Transport
+        {
+            public function send(string $method, string $url, array $headers, ?string $body, int $timeoutMs): \Bayarkit\Http\Response
+            {
+                return new \Bayarkit\Http\Response(200, '{"id":"p1","reference":"R1","status":"paid","purchase":{"total":1050,"currency":"MYR"},"payment":{"amount":1050,"currency":"MYR"}}');
+            }
+        };
+        try {
+            (new Chip('k', 'b', environment: 'live', transport: $transport))->getPayment('p1');
+            $this->fail('a record without is_test was accepted');
+        } catch (GatewayError $e) {
+            $this->assertSame('MODE_UNKNOWN', $e->gatewayCode);
         }
     }
 }

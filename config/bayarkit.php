@@ -24,7 +24,7 @@ return [
             'brand_id' => env('CHIP_BRAND_ID'),
             // From `php artisan bayarkit:chip-public-key` (same secret key); without it every callback is refused.
             'public_key' => env('CHIP_PUBLIC_KEY'),
-            // test | live — refuses a purchase whose is_test disagrees. Empty = no check.
+            // REQUIRED: test | live (match the key). A purchase from the other mode, or one that does not say, is refused.
             'environment' => env('CHIP_ENV'),
             // comma-separated, e.g. "fpx,duitnow_qr"; empty = every method enabled on the brand
             'payment_methods' => env('CHIP_PAYMENT_METHODS', ''),

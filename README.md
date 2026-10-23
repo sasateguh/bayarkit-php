@@ -23,7 +23,8 @@ TOYYIBPAY_CATEGORY_CODE=...
 TOYYIBPAY_ENV=sandbox
 ```
 
-For CHIP: `BAYARKIT_GATEWAY=chip`, `CHIP_SECRET_KEY`, `CHIP_BRAND_ID`, then run `php artisan bayarkit:chip-public-key`
+For CHIP: `BAYARKIT_GATEWAY=chip`, `CHIP_SECRET_KEY`, `CHIP_BRAND_ID`, `CHIP_ENV` (`test` or `live`, matching the key:
+required, it stops a test payment from marking a live order paid), then run `php artisan bayarkit:chip-public-key`
 once and paste the line it prints (`CHIP_PUBLIC_KEY="…"`) into `.env`. Without it every CHIP callback is refused.
 
 ```php

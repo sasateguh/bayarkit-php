@@ -39,7 +39,7 @@ final class LaravelTest extends TestCase
     public function test_binds_the_gateway_named_in_config(): void
     {
         $this->assertInstanceOf(ToyyibPay::class, $this->app->make(Gateway::class));
-        config(['bayarkit.default' => 'chip', 'bayarkit.gateways.chip.secret_key' => 's', 'bayarkit.gateways.chip.brand_id' => 'b']);
+        config(['bayarkit.default' => 'chip', 'bayarkit.gateways.chip.secret_key' => 's', 'bayarkit.gateways.chip.brand_id' => 'b', 'bayarkit.gateways.chip.environment' => 'test']);
         $this->app->forgetInstance(GatewayManager::class);
         $this->assertInstanceOf(Chip::class, $this->app->make(Gateway::class));
     }
@@ -152,7 +152,7 @@ final class LaravelTest extends TestCase
     public function test_the_chip_public_key_command_prints_one_env_line(): void
     {
         $f = Fakes::get('chip');
-        config(['bayarkit.gateways.chip' => ['secret_key' => $f['options']['secretKey'], 'brand_id' => $f['options']['brandId'], 'base_url' => $f['url']]]);
+        config(['bayarkit.gateways.chip' => ['secret_key' => $f['options']['secretKey'], 'brand_id' => $f['options']['brandId'], 'environment' => 'test', 'base_url' => $f['url']]]);
         $this->app->forgetInstance(GatewayManager::class);
         $this->assertSame(0, Artisan::call('bayarkit:chip-public-key'));
         $out = trim(Artisan::output());
