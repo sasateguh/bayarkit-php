@@ -1,4 +1,6 @@
-# Test image for the PHP package (the host has no PHP). Same minor version as the Laravel projects that use it.
-FROM php:8.3.36-cli-alpine
+# Test image for the PHP package (the host has no PHP). Default = the minor version the Laravel projects run;
+# scripts/php-compat.sh builds the lowest (8.2) and newest (8.4) supported versions too.
+ARG PHP_VERSION=8.3.36
+FROM php:${PHP_VERSION}-cli-alpine
 COPY --from=composer:2.8.12 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
