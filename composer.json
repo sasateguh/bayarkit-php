@@ -1,0 +1,32 @@
+{
+  "name": "bayarkit/bayarkit",
+  "description": "Malaysian payment gateways behind one interface for PHP and Laravel: confirm a payment only after the gateway itself says it is paid.",
+  "type": "library",
+  "license": "MIT",
+  "keywords": ["payment", "malaysia", "toyyibpay", "chip", "fpx", "laravel"],
+  "require": {
+    "php": "^8.2",
+    "ext-curl": "*",
+    "ext-json": "*",
+    "ext-openssl": "*"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^10.0",
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^11.5"
+  },
+  "suggest": {
+    "laravel/framework": "Service provider, config, callback reader and checkout response (Laravel 11 or 12)."
+  },
+  "autoload": {
+    "psr-4": { "Bayarkit\\": "src/" }
+  },
+  "autoload-dev": {
+    "psr-4": { "Bayarkit\\Tests\\": "tests/" }
+  },
+  "extra": {
+    "laravel": { "providers": ["Bayarkit\\Laravel\\BayarkitServiceProvider"] }
+  },
+  "config": { "sort-packages": true },
+  "minimum-stability": "stable"
+}
