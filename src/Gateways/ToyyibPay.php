@@ -109,8 +109,8 @@ final class ToyyibPay implements Gateway
 
     public function getPayment(string $id): PaymentRecord
     {
-        // The owner's key (API reference, 23 Oct 2026; not yet measured): without it the fee and payer fields come back
-        // empty, and another account's bill returns no transactions — so a foreign bill code never reads as paid.
+        // The owner's key (measured on the sandbox 27 Oct 2026): without it the payer fields come back empty, and with
+        // another account's key the answer is `No data found!`, so a foreign bill code never reads as paid.
         $r = $this->call('getBillTransactions', ['billCode' => $id, 'userSecretKey' => $this->secretKey]);
         if ($r['status'] !== 200) {
             $this->fail($r);
