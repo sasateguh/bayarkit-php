@@ -8,8 +8,9 @@ sandbox) dan **CHIP** (daripada OpenAPI rasmi, belum diukur). Gateway lain hanya
 
 Perlukan PHP 8.2+ dengan `curl`, `json` dan `openssl`. Tiada kebergantungan masa jalan; sokongan Laravel 11/12 pilihan.
 
-> Belum ada di Packagist (repositori private sehingga keluaran). Dalam projek pada mesin yang sama, guna repositori
-> path: `"repositories": [{"type": "path", "url": "../bayarkit/php"}]`, kemudian `composer require bayarkit/bayarkit:@dev`.
+```bash
+composer require bayarkit/bayarkit
+```
 
 ## Laravel
 
@@ -89,9 +90,26 @@ $result = Bayarkit\Confirm::payment($gateway, Bayarkit\CallbackInput::fromGlobal
 
 ## Menguji aplikasi anda tanpa wang sebenar
 
-Jalankan gateway palsu dengan pakej npm (`npx bayarkit-fake toyyibpay`) dan halakan `base_url` gateway ke `url` yang
-dicetak. API kawalannya menanda bayaran sebagai dibayar dan menghidangkan callback bertandatangan yang tepat seperti
-gateway sebenar: `POST /paid/<id>`, `GET /callback/<id>`, `GET /callback/<id>/tampered`.
+Jalankan gateway palsu daripada pakej npm (Node.js 22.12+). Ia mencetak satu baris JSON dengan `url` untuk dijadikan URL
+asas gateway, URL `control`, dan kunci yang diterimanya:
+
+```bash
+npx --package @bayarkit/testing bayarkit-fake toyyibpay
+# {"gateway":"toyyibpay","url":"http://127.0.0.1:<port>/…","control":"http://127.0.0.1:<port>","options":{"secretKey":"fake-secret","categoryCode":"fakecat"}}
+```
+
+```dotenv
+TOYYIBPAY_SECRET_KEY=fake-secret
+TOYYIBPAY_CATEGORY_CODE=fakecat
+TOYYIBPAY_ENV=sandbox
+TOYYIBPAY_BASE_URL=<url>
+```
+
+Kemudian kawal melalui HTTP, pada URL `control` (bukan `url`): `POST <control>/paid/<id>` menanda bayaran dibayar,
+`GET <control>/callback/<id>` memulangkan callback bertandatangan yang tepat seperti gateway sebenar (hantar ke laluan
+callback anda), dan `GET <control>/callback/<id>/tampered` callback yang dipalsukan. Untuk CHIP:
+`npx --package @bayarkit/testing bayarkit-fake chip`, `CHIP_SECRET_KEY=fake-secret`, `CHIP_BRAND_ID=fake-brand`,
+`CHIP_ENV=test`, `CHIP_BASE_URL=<url>`, kemudian `php artisan bayarkit:chip-public-key` sekali.
 
 ## Peraturan yang dipegang pakej ini
 

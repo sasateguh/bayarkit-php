@@ -4,6 +4,13 @@
   "type": "library",
   "license": "MIT",
   "keywords": ["payment", "malaysia", "toyyibpay", "chip", "fpx", "laravel"],
+  "homepage": "https://github.com/sasateguh/bayarkit/tree/main/php",
+  "authors": [{ "name": "Muhammad Aiman", "homepage": "https://github.com/aimanmalib" }],
+  "support": {
+    "issues": "https://github.com/sasateguh/bayarkit/issues",
+    "source": "https://github.com/sasateguh/bayarkit/tree/main/php",
+    "security": "https://github.com/sasateguh/bayarkit/security/policy"
+  },
   "require": {
     "php": "^8.2",
     "ext-curl": "*",

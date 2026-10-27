@@ -8,8 +8,9 @@ tests against the **same fake gateways** (`bayarkit-fake`). Gateways: **toyyibPa
 
 Requires PHP 8.2+ with `curl`, `json` and `openssl`. No runtime dependencies; Laravel 11/12 support is optional.
 
-> Not on Packagist yet (the repository is private until release). In a project on the same machine, use a path
-> repository: `"repositories": [{"type": "path", "url": "../bayarkit/php"}]`, then `composer require bayarkit/bayarkit:@dev`.
+```bash
+composer require bayarkit/bayarkit
+```
 
 ## Laravel
 
@@ -88,9 +89,26 @@ $result = Bayarkit\Confirm::payment($gateway, Bayarkit\CallbackInput::fromGlobal
 
 ## Testing your app without real money
 
-Run a fake gateway with the npm package (`npx bayarkit-fake toyyibpay`) and point the gateway's `base_url` at the
-`url` it prints. Its control API marks payments paid and serves the exact signed callback the real gateway would send:
-`POST /paid/<id>`, `GET /callback/<id>`, `GET /callback/<id>/tampered`.
+Run a fake gateway from the npm package (Node.js 22.12+). It prints one JSON line with the `url` to use as the
+gateway's base URL, a `control` URL, and the keys it accepts:
+
+```bash
+npx --package @bayarkit/testing bayarkit-fake toyyibpay
+# {"gateway":"toyyibpay","url":"http://127.0.0.1:<port>/…","control":"http://127.0.0.1:<port>","options":{"secretKey":"fake-secret","categoryCode":"fakecat"}}
+```
+
+```dotenv
+TOYYIBPAY_SECRET_KEY=fake-secret
+TOYYIBPAY_CATEGORY_CODE=fakecat
+TOYYIBPAY_ENV=sandbox
+TOYYIBPAY_BASE_URL=<url>
+```
+
+Then drive it over HTTP, on the `control` URL (not `url`): `POST <control>/paid/<id>` marks a payment paid,
+`GET <control>/callback/<id>` returns the exact signed callback the real gateway would send (post it to your callback
+route), and `GET <control>/callback/<id>/tampered` a forged one. For CHIP: `npx --package @bayarkit/testing bayarkit-fake chip`,
+`CHIP_SECRET_KEY=fake-secret`, `CHIP_BRAND_ID=fake-brand`, `CHIP_ENV=test`, `CHIP_BASE_URL=<url>`, then
+`php artisan bayarkit:chip-public-key` once.
 
 ## Rules this package keeps
 
