@@ -19,9 +19,12 @@ final class Confirm
     {
         try {
             $cb = $gateway->verifyCallback($callback);
+        } catch (GatewayError $e) {
+            // A verify call to the gateway's API failed: its message quotes the gateway's answer only.
+            return ConfirmResult::refused(ConfirmResult::GATEWAY_ERROR, $e->getMessage());
         } catch (\Throwable $e) {
-            // The contract says it never throws; when an adapter does, that is a bug or a misconfiguration (a broken
-            // key), not a forgery — reported as such, by class name only (as in the TypeScript twin).
+            // The contract says it never throws on bad input; when an adapter does, that is a bug or a misconfiguration
+            // (a broken key), not a forgery — reported as such, by class name only (as in the TypeScript twin).
             return ConfirmResult::refused(ConfirmResult::GATEWAY_ERROR, $gateway->info()->name.': verifyCallback threw '.$e::class);
         }
         if ($cb === null) {

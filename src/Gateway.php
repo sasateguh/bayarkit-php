@@ -19,6 +19,10 @@ interface Gateway
      */
     public function getPayment(string $id): PaymentRecord;
 
-    /** Check a callback's signature. Returns null when it is not authentic; never throws on bad input. */
+    /**
+     * Check a callback's signature. Returns null when it is not authentic; never throws on bad input. Adapters that
+     * verify through the gateway's API call it here (blocking) and throw GatewayError only when that call fails, which
+     * `Confirm::payment` reports as a gateway error, never as a forgery.
+     */
     public function verifyCallback(CallbackInput $callback): ?VerifiedCallback;
 }

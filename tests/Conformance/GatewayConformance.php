@@ -13,6 +13,9 @@ use Bayarkit\Expected;
 use Bayarkit\Gateway;
 use Bayarkit\GatewayError;
 use Bayarkit\PaymentStatus;
+use Bayarkit\RefundInput;
+use Bayarkit\Refunds;
+use Bayarkit\RefundStatus;
 use Bayarkit\Tests\Support\Fakes;
 use PHPUnit\Framework\TestCase;
 
@@ -42,9 +45,15 @@ abstract class GatewayConformance extends TestCase
         );
     }
 
-    private function deliveredCallback(string $id, bool $tampered = false): CallbackInput
+    /** The signed callback the fake would deliver. Overridden only by the in-memory toy that tests this suite. */
+    protected function deliveredCallback(string $id, bool $tampered = false): CallbackInput
     {
         return Fakes::callbackFor($this->fake(), $id, $tampered);
+    }
+
+    protected function markPaid(string $id): void
+    {
+        Fakes::markPaid($this->fake(), $id);
     }
 
     public function test_declares_where_its_behaviour_comes_from(): void
@@ -82,7 +91,7 @@ abstract class GatewayConformance extends TestCase
     {
         $input = $this->input();
         $created = $this->gateway()->createPayment($input);
-        Fakes::markPaid($this->fake(), $created->id);
+        $this->markPaid($created->id);
         $result = Confirm::payment($this->gateway(), $this->deliveredCallback($created->id), new Expected($input->reference, $input->amount));
         $this->assertTrue($result->ok, $result->detail);
         $this->assertSame($input->reference, $result->payment?->reference);
@@ -94,7 +103,7 @@ abstract class GatewayConformance extends TestCase
     {
         $input = $this->input();
         $created = $this->gateway()->createPayment($input);
-        Fakes::markPaid($this->fake(), $created->id);
+        $this->markPaid($created->id);
         $result = Confirm::payment($this->gateway(), $this->deliveredCallback($created->id, true), new Expected($input->reference, $input->amount));
         $this->assertFalse($result->ok);
         $this->assertSame(ConfirmResult::INVALID_SIGNATURE, $result->reason);
@@ -113,7 +122,7 @@ abstract class GatewayConformance extends TestCase
     {
         $input = $this->input();
         $created = $this->gateway()->createPayment($input);
-        Fakes::markPaid($this->fake(), $created->id);
+        $this->markPaid($created->id);
         $result = Confirm::payment($this->gateway(), $this->deliveredCallback($created->id), new Expected($input->reference, $input->amount + 1));
         $this->assertSame(ConfirmResult::MISMATCH, $result->reason);
     }
@@ -122,7 +131,7 @@ abstract class GatewayConformance extends TestCase
     {
         $input = $this->input();
         $created = $this->gateway()->createPayment($input);
-        Fakes::markPaid($this->fake(), $created->id);
+        $this->markPaid($created->id);
         $result = Confirm::payment($this->gateway(), $this->deliveredCallback($created->id), new Expected('SOMEONE-ELSE', $input->amount));
         $this->assertSame(ConfirmResult::MISMATCH, $result->reason);
     }
@@ -145,12 +154,107 @@ abstract class GatewayConformance extends TestCase
     {
         $input = $this->input();
         $created = $this->gateway()->createPayment($input);
-        Fakes::markPaid($this->fake(), $created->id);
+        $this->markPaid($created->id);
         $body = $this->deliveredCallback($created->id);
         $expected = new Expected($input->reference, $input->amount);
         $first = Confirm::payment($this->gateway(), $body, $expected);
         $second = Confirm::payment($this->gateway(), $body, $expected);
         $this->assertTrue($first->ok);
         $this->assertEquals($first, $second);
+    }
+
+    // Refunds are optional: these cases check something only for adapters that implement Refunds (as in the TypeScript
+    // twin). Not a skip: phpunit.xml fails on skipped tests, so a missing fake can never pass silently.
+
+    private function refunds(): ?Refunds
+    {
+        $g = $this->gateway();
+        $this->assertSame($g instanceof Refunds, is_callable([$g, 'refundPayment']), 'refundPayment without Refunds');
+
+        return $g instanceof Refunds ? $g : null;
+    }
+
+    /** @return array{0: CreatePaymentInput, 1: string} */
+    private function paidPayment(): array
+    {
+        $input = $this->input();
+        $created = $this->gateway()->createPayment($input);
+        $this->markPaid($created->id);
+
+        return [$input, $created->id];
+    }
+
+    public function test_refunds_a_paid_payment_in_full(): void
+    {
+        $g = $this->refunds();
+        if ($g === null) {
+            return;
+        }
+        [$input, $id] = $this->paidPayment();
+        $record = $g->getPayment($id);
+        $refund = $g->refundPayment(new RefundInput($id, $input->amount, 'conformance'));
+        $this->assertNotSame('', $refund->id);
+        $this->assertSame($id, $refund->paymentId);
+        $this->assertSame($input->amount, $refund->amount);
+        $this->assertSame($record->currency, $refund->currency);
+        // Some gateways approve refunds before paying them out, so pending is a correct first answer.
+        $this->assertContains($refund->status, [RefundStatus::Pending, RefundStatus::Succeeded]);
+    }
+
+    public function test_refunds_part_of_a_paid_payment(): void
+    {
+        $g = $this->refunds();
+        if ($g === null) {
+            return;
+        }
+        [$input, $id] = $this->paidPayment();
+        $amount = intdiv($input->amount, 2);
+        $refund = $g->refundPayment(new RefundInput($id, $amount));
+        $this->assertSame($amount, $refund->amount);
+        $this->assertContains($refund->status, [RefundStatus::Pending, RefundStatus::Succeeded]);
+    }
+
+    public function test_refuses_to_refund_more_than_was_paid_and_refunds_nothing_when_it_does(): void
+    {
+        $g = $this->refunds();
+        if ($g === null) {
+            return;
+        }
+        [$input, $id] = $this->paidPayment();
+        try {
+            $g->refundPayment(new RefundInput($id, $input->amount + 1));
+            $this->fail('refunded more than was paid');
+        } catch (GatewayError) {
+        }
+        // The refused call took nothing: the full amount is still refundable.
+        $this->assertSame($input->amount, $g->refundPayment(new RefundInput($id, $input->amount))->amount);
+    }
+
+    public function test_refuses_a_refund_of_zero_or_negative_sen(): void
+    {
+        $g = $this->refunds();
+        if ($g === null) {
+            return;
+        }
+        [, $id] = $this->paidPayment();
+        foreach ([0, -100] as $amount) {
+            try {
+                $g->refundPayment(new RefundInput($id, $amount));
+                $this->fail("refunded {$amount} sen");
+            } catch (GatewayError) {
+                $this->addToAssertionCount(1);
+            }
+        }
+    }
+
+    public function test_refuses_to_refund_a_payment_that_was_never_paid(): void
+    {
+        $g = $this->refunds();
+        if ($g === null) {
+            return;
+        }
+        $created = $g->createPayment($this->input());
+        $this->expectException(GatewayError::class);
+        $g->refundPayment(new RefundInput($created->id, 100));
     }
 }
