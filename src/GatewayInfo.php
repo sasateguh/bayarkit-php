@@ -15,5 +15,7 @@ final readonly class GatewayInfo
         public string $evidence,
         public string $evidenceDate,
         public string $evidenceSource,
+        /** The currency this adapter charges in, and the one `Confirm` expects when the order names none. */
+        public string $currency = 'MYR',
     ) {}
 }

@@ -45,10 +45,11 @@ final class Confirm
         if ($payment->status !== PaymentStatus::Paid) {
             return ConfirmResult::refused(ConfirmResult::NOT_PAID, 'gateway reports '.$payment->status->value, $payment);
         }
+        $currency = $expected->currency ?? $gateway->info()->currency;
         $problems = array_filter([
             $payment->reference !== $expected->reference ? "reference {$payment->reference} ≠ {$expected->reference}" : null,
             $payment->amount !== $expected->amount ? 'amount '.($payment->amount ?? 'unreadable')." sen ≠ {$expected->amount} sen" : null,
-            $payment->currency !== $expected->currency ? "currency {$payment->currency} ≠ {$expected->currency}" : null,
+            $payment->currency !== $currency ? "currency {$payment->currency} ≠ {$currency}" : null,
         ]);
         if ($problems !== []) {
             return ConfirmResult::refused(ConfirmResult::MISMATCH, implode('; ', $problems), $payment);

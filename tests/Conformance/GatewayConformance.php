@@ -96,7 +96,7 @@ abstract class GatewayConformance extends TestCase
         $this->assertTrue($result->ok, $result->detail);
         $this->assertSame($input->reference, $result->payment?->reference);
         $this->assertSame($input->amount, $result->payment?->amount);
-        $this->assertSame('MYR', $result->payment?->currency);
+        $this->assertSame($this->gateway()->info()->currency, $result->payment?->currency);
     }
 
     public function test_refuses_a_callback_whose_signature_was_tampered_with(): void
