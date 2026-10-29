@@ -2,7 +2,7 @@
 
 // bayarkit — which gateway, and its keys. Every value comes from .env; nothing here is a secret.
 return [
-    // toyyibpay | chip
+    // toyyibpay | chip | paddle
     'default' => env('BAYARKIT_GATEWAY', 'toyyibpay'),
 
     'timeout_ms' => (int) env('BAYARKIT_TIMEOUT_MS', 15000),
@@ -29,6 +29,21 @@ return [
             // comma-separated, e.g. "fpx,duitnow_qr"; empty = every method enabled on the brand
             'payment_methods' => env('CHIP_PAYMENT_METHODS', ''),
             'base_url' => env('CHIP_BASE_URL'),
+        ],
+        'paddle' => [
+            // pdl_sdbx_apikey_… (sandbox) or pdl_live_apikey_… (live): the key decides the host
+            'api_key' => env('PADDLE_API_KEY'),
+            // the notification destination's secret key (pdl_ntfset_…)
+            'webhook_secret' => env('PADDLE_WEBHOOK_SECRET'),
+            // Paddle has no MYR: every payment is charged in this one currency (pass the same to CreatePaymentInput)
+            'currency' => env('PADDLE_CURRENCY', 'USD'),
+            // must be enabled on your Paddle account
+            'tax_category' => env('PADDLE_TAX_CATEGORY', 'standard'),
+            // empty = your default payment link (Paddle > Checkout settings)
+            'checkout_url' => env('PADDLE_CHECKOUT_URL'),
+            // maximum notification age in seconds
+            'tolerance_seconds' => (int) env('PADDLE_TOLERANCE_SECONDS', 5),
+            'base_url' => env('PADDLE_BASE_URL'),
         ],
     ],
 ];

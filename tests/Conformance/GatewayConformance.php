@@ -42,6 +42,8 @@ abstract class GatewayConformance extends TestCase
             returnUrl: 'https://shop.example/return',
             callbackUrl: 'https://shop.example/callback',
             customer: new Customer('Ali bin Abu', 'ali@example.com', '0123456789'),
+            // MYR for every Malaysian gateway; Paddle has no MYR and charges in the one currency it declares.
+            currency: $this->gateway()->info()->currency,
         );
     }
 

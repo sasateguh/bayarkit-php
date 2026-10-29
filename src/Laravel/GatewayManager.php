@@ -7,6 +7,7 @@ namespace Bayarkit\Laravel;
 use Bayarkit\Gateway;
 use Bayarkit\GatewayError;
 use Bayarkit\Gateways\Chip;
+use Bayarkit\Gateways\Paddle;
 use Bayarkit\Gateways\ToyyibPay;
 use Bayarkit\Http\Transport;
 
@@ -56,6 +57,11 @@ final class GatewayManager
 
                 return new Chip($s('secret_key'), $s('brand_id'), $s('public_key') ?: null, $s('environment'),
                     $methods, $baseUrl, $this->transport, $timeout);
+            case 'paddle':
+                $require('api_key', 'webhook_secret');
+
+                return new Paddle($s('api_key'), $s('webhook_secret'), $s('currency') ?: 'USD', $s('tax_category') ?: 'standard',
+                    $s('checkout_url') ?: null, (int) ($s('tolerance_seconds') ?: 5), $baseUrl, $this->transport, $timeout);
             default:
                 throw new GatewayError("gateway \"{$name}\" has no PHP adapter yet", 'bayarkit', 0, 'CONFIG');
         }

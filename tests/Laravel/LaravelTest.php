@@ -10,6 +10,7 @@ use Bayarkit\Customer;
 use Bayarkit\Gateway;
 use Bayarkit\GatewayError;
 use Bayarkit\Gateways\Chip;
+use Bayarkit\Gateways\Paddle;
 use Bayarkit\Gateways\ToyyibPay;
 use Bayarkit\Laravel\BayarkitServiceProvider;
 use Bayarkit\Laravel\Callback;
@@ -42,6 +43,11 @@ final class LaravelTest extends TestCase
         config(['bayarkit.default' => 'chip', 'bayarkit.gateways.chip.secret_key' => 's', 'bayarkit.gateways.chip.brand_id' => 'b', 'bayarkit.gateways.chip.environment' => 'test']);
         $this->app->forgetInstance(GatewayManager::class);
         $this->assertInstanceOf(Chip::class, $this->app->make(Gateway::class));
+        config(['bayarkit.default' => 'paddle', 'bayarkit.gateways.paddle.api_key' => 'pdl_sdbx_apikey_x', 'bayarkit.gateways.paddle.webhook_secret' => 'pdl_ntfset_x', 'bayarkit.gateways.paddle.currency' => 'EUR']);
+        $this->app->forgetInstance(GatewayManager::class);
+        $paddle = $this->app->make(Gateway::class);
+        $this->assertInstanceOf(Paddle::class, $paddle);
+        $this->assertSame('EUR', $paddle->info()->currency);
     }
 
     public function test_a_missing_key_names_the_setting_not_a_value(): void
