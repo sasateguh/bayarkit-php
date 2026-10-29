@@ -8,6 +8,7 @@ use Bayarkit\Gateway;
 use Bayarkit\GatewayError;
 use Bayarkit\Gateways\Chip;
 use Bayarkit\Gateways\Paddle;
+use Bayarkit\Gateways\PayPal;
 use Bayarkit\Gateways\ToyyibPay;
 use Bayarkit\Http\Transport;
 
@@ -62,6 +63,12 @@ final class GatewayManager
 
                 return new Paddle($s('api_key'), $s('webhook_secret'), $s('currency') ?: 'USD', $s('tax_category') ?: 'standard',
                     $s('checkout_url') ?: null, (int) ($s('tolerance_seconds') ?: 5), $baseUrl, $this->transport, $timeout);
+            case 'paypal':
+                $require('client_id', 'client_secret', 'webhook_id');
+
+                return new PayPal($s('client_id'), $s('client_secret'), $s('webhook_id'), $s('environment') ?: 'sandbox',
+                    $s('currency') ?: 'USD', $s('brand_name') ?: null, $s('shipping_preference') ?: 'NO_SHIPPING', $baseUrl,
+                    $this->transport, $timeout);
             default:
                 throw new GatewayError("gateway \"{$name}\" has no PHP adapter yet", 'bayarkit', 0, 'CONFIG');
         }

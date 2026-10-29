@@ -11,6 +11,7 @@ use Bayarkit\Gateway;
 use Bayarkit\GatewayError;
 use Bayarkit\Gateways\Chip;
 use Bayarkit\Gateways\Paddle;
+use Bayarkit\Gateways\PayPal;
 use Bayarkit\Gateways\ToyyibPay;
 use Bayarkit\Laravel\BayarkitServiceProvider;
 use Bayarkit\Laravel\Callback;
@@ -48,6 +49,12 @@ final class LaravelTest extends TestCase
         $paddle = $this->app->make(Gateway::class);
         $this->assertInstanceOf(Paddle::class, $paddle);
         $this->assertSame('EUR', $paddle->info()->currency);
+        config(['bayarkit.default' => 'paypal', 'bayarkit.gateways.paypal.client_id' => 'c', 'bayarkit.gateways.paypal.client_secret' => 's',
+            'bayarkit.gateways.paypal.webhook_id' => 'W', 'bayarkit.gateways.paypal.currency' => 'MYR']);
+        $this->app->forgetInstance(GatewayManager::class);
+        $paypal = $this->app->make(Gateway::class);
+        $this->assertInstanceOf(PayPal::class, $paypal);
+        $this->assertSame('MYR', $paypal->info()->currency);
     }
 
     public function test_a_missing_key_names_the_setting_not_a_value(): void

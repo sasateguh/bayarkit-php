@@ -2,7 +2,7 @@
 
 // bayarkit — which gateway, and its keys. Every value comes from .env; nothing here is a secret.
 return [
-    // toyyibpay | chip | paddle
+    // toyyibpay | chip | paddle | paypal
     'default' => env('BAYARKIT_GATEWAY', 'toyyibpay'),
 
     'timeout_ms' => (int) env('BAYARKIT_TIMEOUT_MS', 15000),
@@ -44,6 +44,22 @@ return [
             // maximum notification age in seconds
             'tolerance_seconds' => (int) env('PADDLE_TOLERANCE_SECONDS', 5),
             'base_url' => env('PADDLE_BASE_URL'),
+        ],
+        'paypal' => [
+            // the REST app's credentials (sandbox and live apps have different ones)
+            'client_id' => env('PAYPAL_CLIENT_ID'),
+            'client_secret' => env('PAYPAL_CLIENT_SECRET'),
+            // the id PayPal gave the webhook you added to this REST app
+            'webhook_id' => env('PAYPAL_WEBHOOK_ID'),
+            // sandbox | live
+            'environment' => env('PAYPAL_ENVIRONMENT', 'sandbox'),
+            // what Confirm expects when Expected names no currency (pass the same to CreatePaymentInput)
+            'currency' => env('PAYPAL_CURRENCY', 'USD'),
+            // shown on the PayPal page instead of your business name; empty = the account's name
+            'brand_name' => env('PAYPAL_BRAND_NAME'),
+            // NO_SHIPPING | GET_FROM_FILE
+            'shipping_preference' => env('PAYPAL_SHIPPING_PREFERENCE', 'NO_SHIPPING'),
+            'base_url' => env('PAYPAL_BASE_URL'),
         ],
     ],
 ];

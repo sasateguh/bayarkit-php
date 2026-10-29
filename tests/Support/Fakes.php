@@ -31,6 +31,12 @@ final class Fakes
         self::control($gateway, 'POST', '/paid/'.rawurlencode($id));
     }
 
+    /** The buyer approves on PayPal: the order is `APPROVED`, nothing is captured (PayPal's fake only). */
+    public static function approve(string $gateway, string $id): void
+    {
+        self::control($gateway, 'POST', '/approve/'.rawurlencode($id));
+    }
+
     public static function callbackFor(string $gateway, string $id, bool $tampered = false): CallbackInput
     {
         $body = self::control($gateway, 'GET', '/callback/'.rawurlencode($id).($tampered ? '/tampered' : ''));
