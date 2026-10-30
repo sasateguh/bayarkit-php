@@ -125,6 +125,14 @@ final class PaddleTest extends TestCase
         $this->assertMatchesRegularExpression('/^txn_[a-z\d]{26}$/', $created->id);
     }
 
+    public function test_pins_the_quantity_to_one_so_the_checkout_offers_no_quantity_picker(): void
+    {
+        // Measured on the sandbox: without it the checkout lets the buyer pick 1 to 100 and pay a multiple.
+        $this->gateway()->createPayment($this->input(1050));
+        $body = json_decode((string) $this->wire->last()['body'], true);
+        $this->assertSame(['minimum' => 1, 'maximum' => 1], $body['items'][0]['price']['quantity']);
+    }
+
     public function test_declares_its_currency_and_refuses_myr_before_calling_paddle(): void
     {
         $g = $this->gateway();

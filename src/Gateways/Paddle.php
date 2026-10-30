@@ -25,7 +25,7 @@ use Exception;
 
 /**
  * Paddle Billing — the PHP twin of @bayarkit/paddle, written from the official docs (read 2026-10-29,
- * gateways/paddle/spec.md); NOT yet measured on the sandbox. The TS adapter's header gives the reasons; in short:
+ * gateways/paddle/spec.md) and measured on the sandbox 2026-10-30. The TS adapter's header gives the reasons; in short:
  * Paddle has no MYR, so one currency per instance (default USD) is declared in `info()->currency` and any other is
  * refused before calling Paddle — pass `currency:` to CreatePaymentInput, whose default is MYR. Amounts are minor-unit
  * strings, the price is tax-inclusive (`tax_mode: internal`) and the amount read back is
@@ -108,8 +108,8 @@ final class Paddle implements Refunds
 
     public function info(): GatewayInfo
     {
-        return new GatewayInfo('paddle', self::MINIMUMS[$this->currency] ?? 1, 'docs', '2026-10-29',
-            'developer.paddle.com + paddle-node-sdk (not yet measured on the sandbox)', $this->currency);
+        return new GatewayInfo('paddle', self::MINIMUMS[$this->currency] ?? 1, 'measured', '2026-10-30',
+            'Paddle sandbox: card paid + declined, real webhooks, refunds; developer.paddle.com + paddle-node-sdk', $this->currency);
     }
 
     public static function mapStatus(mixed $status): PaymentStatus
@@ -183,6 +183,8 @@ final class Paddle implements Refunds
                     'name' => mb_substr($words, 0, 150),
                     'unit_price' => ['amount' => (string) $input->amount, 'currency_code' => $this->currency],
                     'tax_mode' => 'internal',
+                    // Without it the checkout shows a 1-100 quantity picker and the buyer can pay a multiple (measured).
+                    'quantity' => ['minimum' => 1, 'maximum' => 1],
                     'product' => ['name' => mb_substr($words, 0, 200), 'tax_category' => $this->taxCategory],
                 ],
             ]],

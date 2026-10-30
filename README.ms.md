@@ -4,8 +4,8 @@
 
 Kembar PHP kepada pakej TypeScript: antara muka yang sama, peraturan "dibayar hanya bila gateway sendiri kata dibayar"
 yang sama, dan diuji terhadap **gateway palsu yang sama** (`bayarkit-fake`). Gateway: **toyyibPay** (diukur pada
-sandbox), **CHIP** (daripada OpenAPI rasmi), serta **Paddle** dan **PayPal** untuk menjual ke luar negara (daripada
-dokumen rasmi masing-masing); tiga yang akhir belum diukur. Gateway lain hanya dalam TypeScript buat masa ini.
+sandbox), **CHIP** (daripada OpenAPI rasmi), serta **Paddle** (diukur pada sandbox) dan **PayPal** (daripada dokumen
+rasmi) untuk menjual ke luar negara; CHIP dan PayPal belum diukur. Gateway lain hanya dalam TypeScript buat masa ini.
 
 Perlukan PHP 8.2+ dengan `curl`, `json` dan `openssl`. Tiada kebergantungan masa jalan; sokongan Laravel 11/12 pilihan.
 

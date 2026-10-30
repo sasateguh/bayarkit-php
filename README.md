@@ -4,8 +4,8 @@
 
 The PHP twin of the TypeScript packages: the same interface, the same "paid only when the gateway says so" rule, and
 tests against the **same fake gateways** (`bayarkit-fake`). Gateways: **toyyibPay** (measured on the sandbox),
-**CHIP** (from the official OpenAPI), and **Paddle** and **PayPal** for selling abroad (from their official docs); the
-last three are not yet measured. Others are TypeScript-only for now.
+**CHIP** (from the official OpenAPI), and **Paddle** (measured on the sandbox) and **PayPal** (from the official docs)
+for selling abroad; CHIP and PayPal are not yet measured. Others are TypeScript-only for now.
 
 Requires PHP 8.2+ with `curl`, `json` and `openssl`. No runtime dependencies; Laravel 11/12 support is optional.
 
