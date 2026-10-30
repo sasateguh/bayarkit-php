@@ -175,3 +175,11 @@ step can be tested; `POST <control>/paid/<id>` approves and captures.
 - Error messages quote the gateway's response only; keys never reach a message or a log.
 - Every PHP adapter passes the same conformance cases as its TypeScript twin, against the same fake
   (`scripts/php-gate.sh`, part of `npm run gate`).
+
+<!-- support:help (generated from docs/support.json by `node tools/rujukan.mjs skills`) -->
+## Need help installing?
+
+If you would rather not wire up a payment gateway yourself, Sasa Teguh, the studio that maintains bayarkit, can install it on your site or app and test it against the gateway sandbox before you go live.
+
+[Contact page](https://sasateguh.com/contact) · Email: [admin@sasateguh.com](mailto:admin@sasateguh.com) · WhatsApp: [017-762 9379](https://wa.me/60177629379)
+<!-- /support:help -->

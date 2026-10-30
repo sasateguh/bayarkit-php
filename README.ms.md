@@ -179,3 +179,11 @@ yang sepadan dan tetapkan `PADDLE_BASE_URL` atau `PAYPAL_BASE_URL` kepada `<url>
 - Mesej ralat memetik jawapan gateway sahaja; kunci tidak pernah masuk ke mesej atau log.
 - Setiap adapter PHP lulus kes keakuran yang sama dengan kembar TypeScriptnya, terhadap gateway palsu yang sama
   (`scripts/php-gate.sh`, sebahagian `npm run gate`).
+
+<!-- support:help (generated from docs/support.json by `node tools/rujukan.mjs skills`) -->
+## Perlukan bantuan memasang?
+
+Jika anda tidak mahu menyambung gateway pembayaran sendiri, Sasa Teguh, studio yang menyelenggara bayarkit, boleh memasangnya di laman atau aplikasi anda dan mengujinya pada sandbox gateway sebelum anda mula menerima bayaran.
+
+[Halaman hubungi](https://sasateguh.com/ms/contact) · E-mel: [admin@sasateguh.com](mailto:admin@sasateguh.com) · WhatsApp: [017-762 9379](https://wa.me/60177629379)
+<!-- /support:help -->
