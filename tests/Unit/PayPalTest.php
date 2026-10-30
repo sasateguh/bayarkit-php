@@ -342,6 +342,11 @@ final class PayPalTest extends TestCase
         $denied = (string) json_encode(['id' => 'WH-3', 'event_type' => 'PAYMENT.CAPTURE.DENIED', 'resource' => ['id' => 'CAP1',
             'status' => 'DECLINED', 'custom_id' => 'R9', 'supplementary_data' => ['related_ids' => ['order_id' => $created->id]]]]);
         $this->assertSame(PaymentStatus::Failed, $g->verifyCallback(new CallbackInput([], $denied, $cb->headers))?->claimedStatus);
+        // Measured: a refund event's resource is the refund, which carries no order id.
+        $refunded = (string) json_encode(['id' => 'WH-4', 'event_type' => 'PAYMENT.CAPTURE.REFUNDED', 'resource_type' => 'refund',
+            'resource' => ['id' => 'REF1', 'status' => 'COMPLETED', 'custom_id' => 'R9', 'amount' => ['currency_code' => 'USD', 'value' => '5.00'],
+                'links' => [['rel' => 'up', 'href' => 'https://paypal.test/v2/payments/captures/CAP1', 'method' => 'GET']]]]);
+        $this->assertNull($g->verifyCallback(new CallbackInput([], $refunded, $cb->headers)));
     }
 
     public function test_refunds_by_capture_id_reports_pending_and_counts_earlier_refunds(): void

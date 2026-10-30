@@ -4,8 +4,8 @@
 
 The PHP twin of the TypeScript packages: the same interface, the same "paid only when the gateway says so" rule, and
 tests against the **same fake gateways** (`bayarkit-fake`). Gateways: **toyyibPay** (measured on the sandbox),
-**CHIP** (from the official OpenAPI), and **Paddle** (measured on the sandbox) and **PayPal** (from the official docs)
-for selling abroad; CHIP and PayPal are not yet measured. Others are TypeScript-only for now.
+**CHIP** (from the official OpenAPI; not yet measured), and **Paddle** and **PayPal** for selling abroad (both
+measured on the sandbox). Others are TypeScript-only for now.
 
 Requires PHP 8.2+ with `curl`, `json` and `openssl`. No runtime dependencies; Laravel 11/12 support is optional.
 
@@ -127,7 +127,8 @@ $result = Confirm::payment($gateway, Callback::from($request), new Expected($ord
 
 `getPayment` only reads; an approved order that was not captured is `pending`. Verifying a PayPal webhook calls PayPal
 (`verify-webhook-signature`); if PayPal cannot be reached, `Confirm::payment` answers `gateway_error` (retry later),
-not `invalid_signature`.
+not `invalid_signature`. Send only `PAYMENT.CAPTURE.*` events to `Confirm::payment`: a refund event names no order. A
+currency your account does not hold leaves the capture `PENDING` (`not_paid`) until you accept it in PayPal.
 
 Both adapters implement `Bayarkit\Refunds`: `$gateway->refundPayment(new RefundInput($paymentId, $amount))` refunds all
 or part of a payment (an amount above what is left is refused before calling the gateway) and returns a

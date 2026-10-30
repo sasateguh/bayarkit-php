@@ -4,8 +4,8 @@
 
 Kembar PHP kepada pakej TypeScript: antara muka yang sama, peraturan "dibayar hanya bila gateway sendiri kata dibayar"
 yang sama, dan diuji terhadap **gateway palsu yang sama** (`bayarkit-fake`). Gateway: **toyyibPay** (diukur pada
-sandbox), **CHIP** (daripada OpenAPI rasmi), serta **Paddle** (diukur pada sandbox) dan **PayPal** (daripada dokumen
-rasmi) untuk menjual ke luar negara; CHIP dan PayPal belum diukur. Gateway lain hanya dalam TypeScript buat masa ini.
+sandbox), **CHIP** (daripada OpenAPI rasmi; belum diukur), serta **Paddle** dan **PayPal** untuk menjual ke luar
+negara (kedua-duanya diukur pada sandbox). Gateway lain hanya dalam TypeScript buat masa ini.
 
 Perlukan PHP 8.2+ dengan `curl`, `json` dan `openssl`. Tiada kebergantungan masa jalan; sokongan Laravel 11/12 pilihan.
 
@@ -128,7 +128,9 @@ $result = Confirm::payment($gateway, Callback::from($request), new Expected($ord
 
 `getPayment` hanya membaca; pesanan yang diluluskan tetapi belum ditangkap ialah `pending`. Mengesahkan webhook PayPal
 memanggil PayPal (`verify-webhook-signature`); jika PayPal tidak dapat dicapai, `Confirm::payment` menjawab
-`gateway_error` (cuba semula kemudian), bukan `invalid_signature`.
+`gateway_error` (cuba semula kemudian), bukan `invalid_signature`. Hantar hanya acara `PAYMENT.CAPTURE.*` ke
+`Confirm::payment`: acara bayaran balik tidak menamakan pesanan. Mata wang yang tidak dipegang akaun anda membiarkan
+tangkapan `PENDING` (`not_paid`) sehingga anda menerimanya di PayPal.
 
 Kedua-dua adapter melaksanakan `Bayarkit\Refunds`: `$gateway->refundPayment(new RefundInput($paymentId, $amount))`
 membuat bayaran balik penuh atau sebahagian (amaun melebihi baki ditolak sebelum memanggil gateway) dan memulangkan

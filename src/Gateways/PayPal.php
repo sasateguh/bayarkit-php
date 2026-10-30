@@ -28,7 +28,7 @@ use RangeException;
 
 /**
  * PayPal Orders v2 — the PHP twin of @bayarkit/paypal, written from the official docs (read 2026-10-29,
- * gateways/paypal/spec.md); NOT yet measured on the sandbox. The TS adapter's header gives the reasons; in short:
+ * gateways/paypal/spec.md) and measured on the sandbox 2026-10-30. The TS adapter's header gives the reasons; in short:
  * OAuth client credentials, the token cached for this object's life until a minute before it expires (and fetched
  * again once on a 401); `environment` sandbox by default. Amounts are integers in PayPal's smallest unit, sent as
  * PayPal's decimal strings (`toValue`/`fromValue`; HUF, JPY and TWD have no decimals). The order is charged in
@@ -44,7 +44,9 @@ use RangeException;
  *
  * Webhooks are verified by PayPal's postback (`verify-webhook-signature`), which blocks: the five `PAYPAL-*` headers,
  * `webhookId` and the raw body spliced in byte for byte (after checking it is one JSON object). `FAILURE` = null; a
- * failed call throws GatewayError, which Confirm reports as `gateway_error`. Deduplicate on `raw['event_id']`.
+ * failed call throws GatewayError, which Confirm reports as `gateway_error`. Deduplicate on `raw['event_id']`: a
+ * retried webhook is the same delivery and verifies again (measured). A `PAYMENT.CAPTURE.REFUNDED` event names no
+ * order and verifies as null; a capture in a currency the account does not hold stays `PENDING` (measured with JPY).
  */
 final class PayPal implements Refunds
 {
@@ -131,8 +133,8 @@ final class PayPal implements Refunds
 
     public function info(): GatewayInfo
     {
-        return new GatewayInfo('paypal', 1, 'docs', '2026-10-29',
-            'developer.paypal.com + paypal-rest-api-specifications (not yet measured on the sandbox)', $this->currency);
+        return new GatewayInfo('paypal', 1, 'measured', '2026-10-30',
+            'PayPal sandbox: buyer approval, captures (USD, MYR, JPY pending), real webhooks, refunds; developer.paypal.com', $this->currency);
     }
 
     /** An integer in PayPal's smallest unit as the decimal string PayPal takes: 1050 USD → "10.50", 500 JPY → "500". */
