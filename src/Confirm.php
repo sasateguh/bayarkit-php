@@ -11,7 +11,9 @@ namespace Bayarkit;
  * 2. the gateway is asked again with `getPayment` (a valid signature can still be replayed or describe another order);
  * 3. the gateway's own record must say paid, for this reference, this exact amount and currency.
  *
- * Make "mark order paid" idempotent: gateways retry callbacks.
+ * Make "mark order paid" idempotent and atomic: gateways retry callbacks and two customers can pay at once, so do it
+ * in one transaction that locks the order row, with a unique index on the gateway's payment id (README, "After
+ * confirmPayment").
  */
 final class Confirm
 {
