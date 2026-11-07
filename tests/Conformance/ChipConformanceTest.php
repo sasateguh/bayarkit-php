@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bayarkit\Tests\Conformance;
 
+use Bayarkit\CallbackInput;
 use Bayarkit\CreatePaymentInput;
 use Bayarkit\Customer;
 use Bayarkit\Gateway;
@@ -36,6 +37,24 @@ final class ChipConformanceTest extends GatewayConformance
         $g = new Chip($f['options']['secretKey'], $f['options']['brandId'], str_replace("\n", '\n', (string) self::$pem), 'test', baseUrl: $f['url']);
         $created = $g->createPayment($this->input());
         $this->assertNotNull($g->verifyCallback(Fakes::callbackFor('chip', $created->id)));
+    }
+
+    public function test_verifies_sha256_only_a_sha512_signature_of_the_chip_send_scheme_is_refused(): void
+    {
+        $f = Fakes::get('chip');
+        $key = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        $this->assertNotFalse($key);
+        $pem = (string) openssl_pkey_get_details($key)['key'];
+        $g = new Chip($f['options']['secretKey'], $f['options']['brandId'], $pem, 'test', baseUrl: $f['url']);
+        $created = $g->createPayment($this->input());
+        $cb = Fakes::callbackFor('chip', $created->id);
+        $signed = function (int $alg) use ($cb, $key): CallbackInput {
+            openssl_sign($cb->rawBody, $sig, $key, $alg);
+
+            return new CallbackInput($cb->fields, $cb->rawBody, ['x-signature' => base64_encode((string) $sig)] + $cb->headers);
+        };
+        $this->assertNotNull($g->verifyCallback($signed(OPENSSL_ALGO_SHA256)));
+        $this->assertNull($g->verifyCallback($signed(OPENSSL_ALGO_SHA512)));
     }
 
     public function test_without_a_public_key_every_callback_is_refused(): void
