@@ -35,7 +35,7 @@ use Exception;
  * `paid`/`completed` = paid; a refund leaves a transaction `completed`. Refunds are adjustments: `full` when the whole
  * amount is still refundable, else `partial` on the one line item; they start `pending_approval` (= pending).
  * Notifications: HMAC-SHA256 over `<ts>:<raw body>` with the destination's secret, any `h1` may match (rotation), then
- * an age check (default 5 s, one-sided like the TS twin).
+ * a time check (default 5 s, both directions like paddle-node-sdk and the TS twin: a future `ts` is refused too).
  */
 final class Paddle implements Refunds
 {
@@ -157,7 +157,8 @@ final class Paddle implements Refunds
             $match = hash_equals($expected, $s) || $match;
         }
 
-        return $match && $nowSeconds - $ts <= $toleranceSeconds;
+        // Both directions, as paddle-node-sdk: a far-future ts would otherwise stay valid (one HMAC target) for good.
+        return $match && abs($nowSeconds - $ts) <= $toleranceSeconds;
     }
 
     public function createPayment(CreatePaymentInput $input): CreatedPayment

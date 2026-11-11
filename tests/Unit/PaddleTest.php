@@ -86,6 +86,21 @@ final class PaddleTest extends TestCase
         $this->assertTrue(Paddle::verifySignature(self::BODY, $header, self::SECRET, 5, self::TS + 5));
     }
 
+    public function test_refuses_a_ts_further_in_the_future_than_the_tolerance_as_the_sdk_does(): void
+    {
+        $header = 'ts='.self::TS.';h1='.self::H1;
+        $this->assertFalse(Paddle::verifySignature(self::BODY, $header, self::SECRET, 5, self::TS - 6));
+        $this->assertTrue(Paddle::verifySignature(self::BODY, $header, self::SECRET, 5, self::TS - 5));
+        $this->assertTrue(Paddle::verifySignature(self::BODY, $header, self::SECRET, 5, self::TS - 1));
+    }
+
+    public function test_refuses_a_ts_too_large_to_be_a_number(): void
+    {
+        $ts = str_repeat('9', 400);
+        $h1 = hash_hmac('sha256', ((int) $ts).':'.self::BODY, self::SECRET);
+        $this->assertFalse(Paddle::verifySignature(self::BODY, "ts={$ts};h1={$h1}", self::SECRET, 5, self::TS));
+    }
+
     public function test_accepts_when_one_of_several_h1_matches_and_refuses_when_none_does(): void
     {
         $other = hash_hmac('sha256', self::TS.':'.self::BODY, 'pdl_ntfset_old');
@@ -210,13 +225,14 @@ final class PaddleTest extends TestCase
         $this->assertNull($g->verifyCallback($this->signed($event('adjustment.created'))));
     }
 
-    public function test_refuses_a_correctly_signed_notification_older_than_five_seconds(): void
+    public function test_refuses_a_correctly_signed_notification_more_than_five_seconds_away(): void
     {
         $g = $this->gateway();
         $id = $g->createPayment($this->input())->id;
         $body = Fakes::callbackFor('paddle', $id)->rawBody;
         $this->assertNull($g->verifyCallback($this->signed($body, time() - 10)));
         $this->assertSame($id, $g->verifyCallback($this->signed($body))?->id);
+        $this->assertNull($g->verifyCallback($this->signed($body, time() + 10)));
     }
 
     public function test_refunds_full_and_partial_both_pending_until_approval(): void
