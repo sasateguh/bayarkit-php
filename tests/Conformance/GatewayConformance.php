@@ -101,6 +101,19 @@ abstract class GatewayConformance extends TestCase
         $this->assertSame($this->gateway()->info()->currency, $result->payment?->currency);
     }
 
+    /** The one reference shape every bayarkit gateway accepts (README "Choosing a reference"); twin of the TS case. */
+    public function test_confirms_a_payment_whose_reference_is_the_portable_shape(): void
+    {
+        $reference = substr('P'.str_pad((string) (int) (microtime(true) * 1000), 13, '0', STR_PAD_LEFT).str_pad((string) self::$counter, 6, '0', STR_PAD_LEFT), 0, 20);
+        $this->assertMatchesRegularExpression('/^[A-Z0-9]{20}$/', $reference);
+        $input = $this->input(reference: $reference);
+        $created = $this->gateway()->createPayment($input);
+        $this->markPaid($created->id);
+        $result = Confirm::payment($this->gateway(), $this->deliveredCallback($created->id), new Expected($reference, $input->amount));
+        $this->assertTrue($result->ok, $result->detail);
+        $this->assertSame($reference, $result->payment?->reference);
+    }
+
     public function test_refuses_a_callback_whose_signature_was_tampered_with(): void
     {
         $input = $this->input();
